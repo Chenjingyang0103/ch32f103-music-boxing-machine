@@ -1,0 +1,30 @@
+# Keil 编译输出文件
+*.axf
+*.bin
+*.crf
+*.d
+*.dbg
+*.dep
+*.elf
+*.hex
+*.htm
+*.iex
+*.lnp
+*.lst
+*.map
+*.o
+*.obj
+*.sct
+*.uvoptx
+*.uvguix.*
+*.uvgui.*
+*.scvd
+
+# Keil 日志文件
+uv4.log
+uv4.log.lock
+keil-assistant.log
+
+# VS Code 本地配置
+.vscode/
+.VSCodeCounter/
