@@ -49,7 +49,6 @@ typedef struct
 
 static CalFilterInfoTypedef s_calFilter[ADC_DEV_NUM];
 
-
 /* ==================== 内部持有的标定表 ==================== */
 static int32_t s_cal[ADC_DEV_NUM][ADC_CAL_POINTS];
 static float   s_rate[ADC_DEV_NUM];
@@ -57,21 +56,22 @@ static float   s_rate[ADC_DEV_NUM];
 /* 各通道标定有效性标志（1=已标定） */
 static uint8_t s_valid[ADC_DEV_NUM];
 
-
 /* ==================== 默认标定表 ==================== */
 /* 行索引 = AdcDevNumTypedef，列索引 = CalPointTypedef */
 static const int32_t s_defaultCal[ADC_DEV_NUM][ADC_CAL_POINTS] = {
-    /* 空载    200g    500g    1000g   2000g   4000g */
-    {2681, 4538, 7328, 11966, 21251, 39821},   // AdcDevNum0
-    {3646, 3784, 4045, 4394, 4849, 5759},      // AdcDevNum1
-    {0, 0, 0, 0, 0, 0},                         // AdcDevNum2（未标定）
-    {0, 0, 0, 0, 0, 0},                         // AdcDevNum3（未标定）
-    {0, 0, 0, 0, 0, 0},                         // AdcDevNum4（未标定）
-    {0, 0, 0, 0, 0, 0},                         // AdcDevNum5（未标定）
+    /* 空载      200g      500g      1000g     2000g     4000g */
+    { -212100, -207010, -199700, -185800, -159000, -105400 },    // AdcDevNum0
+    {  -19700,  -14700,  -6450,  7600,  34700,  90600 },    // AdcDevNum1
+    { -182200, -177200, -169700, -156600, -128500, -74500 },    // AdcDevNum2
+    {  -24500,  -19500,  -11700,  -1700,  27200,  86700 },    // AdcDevNum3
+    {  -228500,  -223500,  -215400,  -201800,  -175600,  -121700 },    // AdcDevNum4
+    { -76850, -72100, -64600, -51800, -25300, 29800 },    // AdcDevNum5 //有误
 };
 
-static const float s_defaultRate[ADC_DEV_NUM] = {1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f};
-
+static const float s_defaultRate[ADC_DEV_NUM] = {
+    /* AdcDevNum0  AdcDevNum1  AdcDevNum2  AdcDevNum3  AdcDevNum4  AdcDevNum5 */
+       1.0f,       1.0f,       1.0f,       1.0f,       1.0f,       1.0f,
+};
 
 /* ==================== 内部辅助函数 ==================== */
 
@@ -96,7 +96,6 @@ static uint8_t Cal_ReadAdc(AdcDevNumTypedef DevNum, int32_t *OutValue)
     }
     return 1;
 }
-
 
 /**
  * @brief  抗脉冲加权均值滤波（去低端极值平均）
@@ -274,7 +273,6 @@ uint8_t Cal_WaitStable(AdcDevNumTypedef DevNum, int32_t *OutValue)
         last_filtered = filtered;       // 保存本次输出，供下次比较
         total_cnt++;
     }
-
     return 0;   /* 超时 */
 }
 /**
@@ -352,7 +350,6 @@ uint8_t Cal_Load(void)
     return 1;
 }
 
-
 /**
  * @brief  获取某通道某标定点的 ADC 值
  * @param  DevNum  通道号
@@ -366,7 +363,6 @@ int32_t Cal_GetAdc(AdcDevNumTypedef DevNum, CalPointTypedef Point)
     return s_cal[DevNum][Point];
 }
 
-
 /**
  * @brief  获取某通道某标定点相对零点的 ADC 差值
  * @param  DevNum  通道号
@@ -379,7 +375,6 @@ int32_t Cal_GetDiff(AdcDevNumTypedef DevNum, CalPointTypedef Point)
     if (Point >= CalPoint_Num) return 0;
     return s_cal[DevNum][Point] - s_cal[DevNum][CalPoint_Zero];
 }
-
 
 /**
  * @brief  判断某通道是否已完成全部标定

@@ -23,7 +23,6 @@ typedef enum
     PunchState_Track,       // 已确认真实冲击，持续追踪峰值
 } PunchStateTypedef;
 
-
 /**
  * @brief 运行参数
  */
@@ -35,7 +34,6 @@ typedef struct
     uint8_t             HitReported;    // 1=有击中事件待上报（边沿触发）
     uint8_t             ReleaseCnt;     // 释放计数器：连续低于释放阈值的点数
 } PunchRunningParamTypedef;
-
 
 /**
  * @brief 静态参数

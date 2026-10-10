@@ -74,8 +74,6 @@ void Timer2_Init(uint16_t arr, uint16_t psc)
     TIM_Cmd(TIM2, ENABLE);
 }
 
-
-
 //void TIM2_IRQHandler(void) __attribute__((interrupt("WCH-Interrupt-fast")));  // CH32V系列才需要开启这行函数
 void TIM2_IRQHandler(void)
 {

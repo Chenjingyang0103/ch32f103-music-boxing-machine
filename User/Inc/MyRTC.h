@@ -10,6 +10,5 @@ void MyRTC_Alarm_Reload(uint32_t seconds);                  // 闹钟触发后�
 void MyRTC_SetCounter(time_t Count);                        // 设置 RTC 计数值
 void MyRTC_TimeToDate(time_t *TimeStamp, struct tm *tm);    // 时间戳转换为北京时间
 
-
 #endif
 

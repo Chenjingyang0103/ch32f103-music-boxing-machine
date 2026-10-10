@@ -23,7 +23,6 @@ typedef enum
     GameState_Over          // 游戏结束（总次数到）
 } GameStateTypedef;
 
-
 typedef struct
 {
     GameStateTypedef GameState;     // 当前状态
@@ -48,7 +47,6 @@ typedef struct
     GameRunningParamTypedef    RunningParam;   // 运行参数
     GameStaticParamTypedef     StaticParam;    // 静态参数
 } GameDeviceParamTypedef;
-
 
 void Game_Init(void);                    // 初始化游戏状态与随机种子
 void Game_Task(void);                    // 游戏状态机主循环，主循环每圈调用一次

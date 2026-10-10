@@ -85,7 +85,6 @@ void Weight_Update(AdcDevNumTypedef DevNum, int32_t AdFilterValue)
     }
 }
 
-
 /**
  * @brief  称重模块初始化：清零状态、设置零点、从 Calibration 加载标定差值
  * @param  DevNum        通道号
@@ -138,7 +137,6 @@ void Weight_Init(AdcDevNumTypedef DevNum, int32_t AdStableValue)
 float Weight_GetValue(AdcDevNumTypedef DevNum)
 {
     WeightInfoTypedef *p = &WeightInfo[DevNum];
-
     return p->WeiValue * p->Rate;
 }
 
@@ -173,5 +171,3 @@ int32_t Weight_GetZeroValue(AdcDevNumTypedef DevNum)
 {
     return WeightInfo[DevNum].ZeroAdc;
 }
-
-

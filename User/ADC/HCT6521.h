@@ -50,10 +50,6 @@ typedef enum
     AdcMode_Enable        = 0x04,     // 开启（ENOB +0.4bit，功耗 +800uA）
 } AdcModeTypedef;
 
-
-
-
-
 /// @brief      状态机状态
 typedef enum
 {
@@ -69,13 +65,12 @@ typedef struct
     uint32_t            TimeOutCount;   // 超时计数
 } AdcFsmParamTypedef;
 
-
 /// @brief      静态参数（硬件配置，初始化后不变）
 typedef struct
 {
-    /* ---- SDO 引脚配置（共用的数据线） ---- */
-    GPIO_TypeDef            *SdoPort;        // SDO 读取端口（共用）
-    uint16_t                SdoPin;           // SDO 读取引脚（共用）
+    /* ---- 每个 ADC 独立的 SDO 数据引脚 ---- */
+    GPIO_TypeDef            *SdoPort;        // SDO 数据端口
+    uint16_t                SdoPin;          // SDO 数据引脚
 
     /* ---- 每个 ADC 独立的 SCK 控制引脚 ---- */
     GPIO_TypeDef            *SckPort;        // SCK 控制端口
@@ -87,8 +82,8 @@ typedef struct
 typedef struct
 {
     /* ---- 状态机参数 ---- */
-
     AdcFsmParamTypedef      AdcFsmParam;
+    
     /* ---- 原始数据 ---- */
     int32_t                 RawValue;           // 原始AD值
     int32_t                 LastValue;          // 上一次采集值（当前项目未使用，可删除）

@@ -2,7 +2,6 @@
 #include "debug.h"
 #include "ch32f10x_rtc.h"
 
-
 /**
  * @brief  RTC 初始化函数
  * @note   使用内部低速时钟 LSI (40000Hz) 作为 RTC 时钟源
@@ -42,7 +41,6 @@ void MyRTC_Init(void)
     RTC_SetCounter(0);
     RTC_WaitForLastTask();
 }
-
 
 static volatile uint8_t s_rtcWakeupFlag = 0;   // RTC 闹钟唤醒标志（供主循环轮询）
 
@@ -122,7 +120,6 @@ void MyRTC_TimeToDate(time_t *TimeStamp, struct tm *tm)
     }
 }
 
-
 /**
  * @brief  RTC闹钟中断服务函数
  *         __attribute__((interrupt("WCH-Interrupt-fast"))) 保持与你的风格一致
@@ -133,7 +130,7 @@ void RTC_IRQHandler(void)
     {
         RTC_ClearITPendingBit(RTC_IT_ALR);       // 清除闹钟中断标志
         // TODO: ISR 内不应 printf（07 文档规定 ISR 应短小）；建议改为置标志由主循环打印，本轮暂不改。
-        printf("进入RTC中断\r\n");
+        // printf("进入RTC中断\r\n");
         s_rtcWakeupFlag = 1;                     // 设置标志，通知主循环执行任务
     }
 }

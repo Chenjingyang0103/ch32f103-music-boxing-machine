@@ -117,7 +117,8 @@ void Game_Task(void)
             // 播放准备音乐，选靶子，然后进入 PLAYING
             // （这里可以加 500ms 延时做过渡）
             pRun->TargetNum = Game_RandomTarget();          // 生成随机靶子号
-            printf("当前靶号:%d, 击中次数%d, 总回合数:%d\r\n", pRun->TargetNum, pRun->HitCount, pRun->TotalRounds);
+            printf("{当前靶号}%d\r\n", (pRun->TargetNum + 1));
+            printf("{当前靶号:%d, 击中次数%d, 总回合数:}%d\r\n", (pRun->TargetNum + 1), pRun->HitCount, pRun->TotalRounds);
             // printf("当前状态Ready Num:%d\n", pRun->TargetNum);
             // LEDMusic_TargetOn(s_TargetNum);
             pRun->GameState = GameState_Playing;
@@ -136,8 +137,8 @@ void Game_Task(void)
             {
                 float PeakForce = Punch_GetPeakForce((AdcDevNumTypedef)pRun->TargetNum);  // 获取当前轮次力度峰值
                 // Punch_ClearPeakForce(pRun->TargetNum);
-                printf("击中靶子%d,{力度}%f\r\n", pRun->TargetNum, PeakForce);
-
+                printf("{击中靶子}%d\r\n", (pRun->TargetNum + 1));
+                printf("击中靶子%d,力度:%f\r\n", (pRun->TargetNum + 1), PeakForce);
                 pRun->HitCount++;       // 击中次数+1
                 pRun->TotalRounds++;    // 总局数+1
                 // LEDMusic_PlayHit(force);
@@ -155,7 +156,7 @@ void Game_Task(void)
 
             #if GAME_TIMEOUT_ENABLE
                 // 检测是否超时（超时次数 TimeOut_Time * 150ms）
-                else if (GetGameTick() >= pSta->TimeOut_Time)
+            else if (GetGameTick() >= pSta->TimeOut_Time)
                 {
                     // printf("Time:%d\n", GetGameTick());
                     pRun->TotalRounds++;
@@ -195,7 +196,7 @@ void Game_Task(void)
 
             SM28_ShowGameCount(SM28DevNum0, pRun->TotalRounds, 0);  //显示的是当前总回合数（消隐前导零）
 
-            // SM28_Update(SM28DevNum0);
+            SM28_Update(SM28DevNum0);
 
             if (pRun->TotalRounds >= pSta->MaxRound) // 当前局数 >= 总局数
             {

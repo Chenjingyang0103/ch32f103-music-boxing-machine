@@ -11,7 +11,6 @@
 #include "MyFlash.h"
 #include <string.h>
 
-
 /* Flash 数据的 RAM 镜像，位于 .bss，不占栈 */
 static uint8_t buf[MYFLASH_BLOCK_SIZE];
 
@@ -41,7 +40,6 @@ static uint8_t MyFlash_WriteBlock(void)
         printf("MyFlash: 写入失败, status=0x%X\r\n", state);
         return 0;
     }
-
     return 1;
 }
 

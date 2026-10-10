@@ -93,26 +93,33 @@ static void SM28_SendByte(SM28StaticParamTypedef *pSta, uint8_t Byte)
 
     uint8_t i;
     // 起始：SCL低，SDA低
-    GPIO_ResetBits(sclPort, sclPin);
-    GPIO_ResetBits(sdaPort, sdaPin);
+    sclPort->BCR = sclPin;
+    // GPIO_ResetBits(sclPort, sclPin);
+    sdaPort->BCR = sdaPin;
+    // GPIO_ResetBits(sdaPort, sdaPin);
 
     for (i = 0; i < 8; i++)
     {
-        GPIO_SetBits(sclPort, sclPin);   // SCL高，芯片采样
-        GPIO_SetBits(sdaPort, sdaPin);   // 先拉高，再根据数据位决定
+        sclPort->BSHR = sclPin;           // SCL高，芯片采样
+        // GPIO_SetBits(sclPort, sclPin);
+        sdaPort->BSHR = sdaPin;           // 先拉高，再根据数据位决定
+        // GPIO_SetBits(sdaPort, sdaPin);
 
         if (Byte & 0x80)
         {
-            GPIO_SetBits(sdaPort, sdaPin);  // 发送1
+            sdaPort->BSHR = sdaPin;          // 发送1
+            // GPIO_SetBits(sdaPort, sdaPin);
         }
         else
         {
-            GPIO_ResetBits(sdaPort, sdaPin); // 发送0
+            sdaPort->BCR = sdaPin;           // 发送0
+            // GPIO_ResetBits(sdaPort, sdaPin);
         }
 
-        GPIO_ResetBits(sclPort, sclPin);   // SCL低，完成一位
+        sclPort->BCR = sclPin;             // SCL低，完成一位
         Byte <<= 1;
-        GPIO_ResetBits(sdaPort, sdaPin);   // 拉低 SDA，为下一位准备
+        sdaPort->BCR = sdaPin;             // 拉低 SDA，为下一位准备
+        // GPIO_ResetBits(sdaPort, sdaPin);
     }
 }
 
@@ -204,9 +211,7 @@ static void SM28_SetChar(SM28RunningParamTypedef *pRun, uint8_t digit, uint8_t c
     }
 }
 
-
 /* ==================== 对外接口实现 ==================== */
-
 
 /**
  * @brief 初始化 SM16028E 设备（引脚 + 缓冲区 + 默认亮度）
@@ -254,7 +259,6 @@ void SM28_Clear(SM28DevNumTypedef DevNum)
     SM28_Update(DevNum);
 }
 
-
 /**
  * @brief 全屏点亮（所有LED亮起）
  * @param DevNum 设备号
@@ -270,7 +274,6 @@ void SM28_AllOn(SM28DevNumTypedef DevNum)
     SM28_Update(DevNum);
 }
 
-
 /**
  * @brief 在指定数字位显示一个字符（来自字模表）
  * @param DevNum  设备号
@@ -284,7 +287,6 @@ void SM28_ShowChar(SM28DevNumTypedef DevNum, uint8_t Digit, SM28CharIndexTypedef
     SM28_SetChar(pRun, Digit, (uint8_t)CharIdx);
     // 注意：不立即更新，由外部调用 SM28_Update 统一发送
 }
-
 
 /**
  * @brief 显示最大力值（带一位小数）
@@ -406,11 +408,10 @@ void SM28_ShowGameCount(SM28DevNumTypedef DevNum, int32_t CountValue, uint8_t Le
 
 }
 
-
 /**
- * @brief 显示运行时间（单位毫秒，显示最多6位数字）
- * @param DevNum      设备号
- * @param TimeValue   时间值（0~999999）
+ * @brief  显示运行时间（纯数值显示，最多6位数字，单位由调用方决定）
+ * @param  DevNum      设备号
+ * @param  TimeValue   时间值（0~999999，单位由调用方决定，当前调用方传入的是秒数）
  * @param LeadingZero 前导零消隐：0=消隐，1=显示
  * @note  使用 TimeDigits 数组映射到具体数码管位置。
  *        显示最多6位：个、十、百、千、万、十万。
@@ -458,7 +459,6 @@ void SM28_ShowRunTime(SM28DevNumTypedef DevNum, int32_t TimeValue, uint8_t Leadi
 
 }
 
-
 /**
  * @brief 直接控制单个LED点
  * @param DevNum   设备号
@@ -483,7 +483,6 @@ void SM28_SetBrightness(SM28DevNumTypedef DevNum, uint8_t Brightness)
     if (DevNum >= SM28_DEV_NUM) return;
     SM28DeviceParam[DevNum].RunningParam.Brightness = Brightness;
 }
-
 
 /**
  * @brief 刷新显示（将缓冲区数据发送到芯片）

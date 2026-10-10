@@ -7,7 +7,7 @@ static volatile uint8_t s_KeyPressed = 0;
 
 /**
  * @brief 按键引脚初始化（GPIO + EXTI 中断）
- * @note  使用 PA8 引脚，下降沿触发，中断线 EXTI8（属于 EXTI9_5_IRQn）
+ * @note  使用 PA6 引脚，下降沿触发，中断线 EXTI6（属于 EXTI9_5_IRQn）
  */
 void Key_Init(void)
 {
@@ -18,17 +18,17 @@ void Key_Init(void)
     // 1. 使能 GPIOA 时钟
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA | RCC_APB2Periph_AFIO, ENABLE);
 
-    // 2. 配置 PA8 为上拉输入
-    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_8;
+    // 2. 配置 PA6 为上拉输入
+    GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
     GPIO_Init(GPIOA, &GPIO_InitStructure);
 
-    // 3. 将 PA8 映射到 EXTI8
-    GPIO_EXTILineConfig(GPIO_PortSourceGPIOA, GPIO_PinSource8);
+    // 3. 将 PA6 映射到 EXTI6
+    GPIO_EXTILineConfig(GPIO_PortSourceGPIOA, GPIO_PinSource6);
 
-    // 4. 配置 EXTI8 为下降沿触发中断
-    EXTI_InitStructure.EXTI_Line = EXTI_Line8;
+    // 4. 配置 EXTI6 为下降沿触发中断
+    EXTI_InitStructure.EXTI_Line = EXTI_Line6;
     EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
     EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Falling;
     EXTI_InitStructure.EXTI_LineCmd = ENABLE;
@@ -54,7 +54,7 @@ uint8_t Key_GetNum(void)
     {
         Delay_Ms(20);
         // 再次确认引脚仍为低电平（按下状态）
-        if (GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_8) == 0)
+        if (GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_6) == 0)
         {
             KeyNum = 1;
         }
@@ -64,16 +64,16 @@ uint8_t Key_GetNum(void)
 }
 
 /**
- * @brief EXTI9_5 中断服务函数（处理 PA8 下降沿）
+ * @brief EXTI9_5 中断服务函数（处理 PA6 下降沿）
  */
 //void EXTI9_5_IRQHandler(void) __attribute__((interrupt("WCH-Interrupt-fast"))); // CH32V系列才需要开启这行函数
 void EXTI9_5_IRQHandler(void)
 {
-    // 检查是否为 EXTI8 中断
-    if (EXTI_GetITStatus(EXTI_Line8) != RESET)
+    // 检查是否为 EXTI6 中断
+    if (EXTI_GetITStatus(EXTI_Line6) != RESET)
     {
         s_KeyPressed = 1;   // 置位按键事件
         // 清除中断挂起标志
-        EXTI_ClearITPendingBit(EXTI_Line8);
+        EXTI_ClearITPendingBit(EXTI_Line6);
     }
 }

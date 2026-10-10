@@ -72,7 +72,6 @@ void Punch_Reset(AdcDevNumTypedef DevNum)
     pRun->ReleaseCnt  = 0;
 }
 
-
 /**
  * @brief 状态机主函数，每周期调用一次
  * @param DevNum 通道号

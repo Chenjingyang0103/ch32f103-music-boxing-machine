@@ -2,7 +2,7 @@
  *********************************************************************************
  * @file    HCT6521.c
  * @brief   HCT6521 高精度 ADC 驱动（GPIO 模拟 SPI，非阻塞状态机读取）
- * @note    每个通道使用独立的 SCK 控制引脚、共用的 SDO 数据引脚，
+ * @note    每个通道各自使用独立的 SCK 控制引脚和独立的 SDO 数据引脚，
  *          通过模拟 SPI 时序完成寄存器配置与 24 位原始数据采集。
  *********************************************************************************
  */
@@ -381,8 +381,7 @@ void HCT6521_Init(void)
     StaticInit.SckPin   = GPIO_Pin_12;
     StaticInit.SdoPort = GPIOA;
     StaticInit.SdoPin   = GPIO_Pin_11;
-    AdcDeviceStaticInit(&StaticInit, AdcDevNum4);
-
+    AdcDeviceStaticInit(&StaticInit, AdcDevNum0);
 
     // ====================== 设备2 ======================
     StaticInit.SckPort = GPIOB;
@@ -390,7 +389,6 @@ void HCT6521_Init(void)
     StaticInit.SdoPort = GPIOB;
     StaticInit.SdoPin   = GPIO_Pin_3;
     AdcDeviceStaticInit(&StaticInit, AdcDevNum1);
-
 
     // ====================== 设备3 ======================
     StaticInit.SckPort = GPIOB;
@@ -411,7 +409,7 @@ void HCT6521_Init(void)
     StaticInit.SckPin   = GPIO_Pin_8;
     StaticInit.SdoPort = GPIOB;
     StaticInit.SdoPin   = GPIO_Pin_15;
-    AdcDeviceStaticInit(&StaticInit, AdcDevNum0);
+    AdcDeviceStaticInit(&StaticInit, AdcDevNum4);
 
     // ====================== 设备6 ======================
     StaticInit.SckPort = GPIOA;
@@ -429,7 +427,7 @@ void HCT6521_Init(void)
     // ====================== 芯片寄存器配置 ======================
     for (uint8_t i = 0; i < ADC_DEV_NUM; i++)
     {
-        HCT6521_Config((AdcDevNumTypedef)i, AdcGain_1, AdcDr_20Hz, AdcRef_External, AdcShi_Disable, AdcMode_Disable);
+        HCT6521_Config((AdcDevNumTypedef)i, AdcGain_32, AdcDr_20Hz, AdcRef_External, AdcShi_Disable, AdcMode_Disable);
         SCLK_L((AdcDevNumTypedef)i);    // 让芯片变为AD转换状态
     }
 
@@ -447,14 +445,24 @@ void HCT6521_Init(void)
 /**
   * @brief  读取 24 位 ADC 原始数据
   * @param  DevNum  通道号
-  * @retval 24 位原始 ADC 值
+  * @retval 24 位有符号原始 ADC 值（二补码已符号扩展，范围 -8388608 ~ 8388607）
   */
-static uint32_t Read24Bit(AdcDevNumTypedef DevNum)
+static int32_t Read24Bit(AdcDevNumTypedef DevNum)
 {
     uint8_t buffer[3];
+    int32_t value;
+
     for (uint8_t i = 0; i < 3; i++)
         buffer[i] = IO_ReadByte_Data(DevNum);
-    return ((buffer[0] << 16) + (buffer[1] << 8) + (buffer[2])); // buffer[0]=高字节, buffer[1]=中字节, buffer[2]=低字节
+
+    // buffer[0]=高字节, buffer[1]=中字节, buffer[2]=低字节，先拼成 24 位无符号值
+    value = ((int32_t)buffer[0] << 16) | ((int32_t)buffer[1] << 8) | (int32_t)buffer[2];
+
+    // 24 位二补码符号扩展：bit23 为 1 表示负值，高 8 位补 1
+    if (value & 0x00800000)
+        value |= (int32_t)0xFF000000;
+
+    return value;
 }
 
 

@@ -1,11 +1,11 @@
 #include "MyRTC.h"
 #include "HCT6521.h"        // AD采集
-#include "MyFlash.h"        // 内部FLash存储
 
 #include "Filter.h"         // 滤波
 #include "Weight.h"         // 重量转换
 #include "SM16028E.h"       // 数码管显示
 #include "Timer.h"          // 系统计时
+#include "Key.h"            // 按键
 #include "PunchDetect.h"    // 拳击检测
 #include "GameLogic.h"      // 游戏逻辑
 #include "Project_Config.h" // 整个工程的配置文件
@@ -89,9 +89,9 @@ int main(void)
     Delay_Init();                   // 初始化延时函数（基于SysTick）
     USART_Printf_Init(115200);      // 初始化串口打印，用于输出调试信息
 
-    Timer2_Init(800, 10);           // ARR = 800, PSC = 10 定时器初始化, 定时1Ms中断一次
+    Timer2_Init(999, 7);            // ARR = 999, PSC = 7 定时器初始化, 定时1Ms中断一次
 
-    // Key_Init();      //按键初始化
+    Key_Init();                     // 按键初始化（PA6，EXTI6，落在 EXTI9_5_IRQn）
 
 
 
@@ -107,7 +107,6 @@ int main(void)
 //    }
 //    printf("\r\n");
 
-
     HCT6521_Init();                 //SPI引脚初始化,HTC6521寄存器配置初始化
     Cal_Init();                     // 标定模块初始化：加载 Flash 或使用默认值
 
@@ -116,18 +115,22 @@ int main(void)
         Filter_Init((AdcDevNumTypedef)i);
     }
 
-
-
-
-
     // 获取数据，将当前稳定值设为零点
     for (uint8_t i = 0; i < ADC_DEV_NUM; i++)
     {
-        int32_t AdRawValue;
-        int32_t FilterValue;    // 滤波后AD值
+        int32_t  AdRawValue = 0;
+        int32_t  FilterValue;    // 滤波后AD值
+        uint32_t ZeroReadCnt = 0;
 
-        // 读取一次空载AD值作为0点
-        while (!HCT6521_Task((AdcDevNumTypedef)i, &AdRawValue));
+        // 读取一次空载AD值作为0点（带超时保护，避免 SDO 异常时死循环）
+        while (!HCT6521_Task((AdcDevNumTypedef)i, &AdRawValue))
+        {          
+            if (++ZeroReadCnt > ADC_ZERO_READ_TIMEOUT)
+            {
+                printf("零点读取超时, 通道 %d, 按默认零点 0 处理\r\n", i);
+                break;
+            }
+        }
         FilterValue = Filter_AdcFilt((AdcDevNumTypedef)i, AdRawValue);
 
         printf("FilterValue= %d  i= %d\r\n", FilterValue, i);
@@ -139,13 +142,13 @@ int main(void)
         Punch_Init((AdcDevNumTypedef)i);
     }
 
-
     MyRTC_Init();
 
     SM28_Init(SM28DevNum0);
     SM28_Clear(SM28DevNum0);
 
     Game_Init();
+    Game_Start();
 
     printf("初始化完成！！！\r\n");
 
@@ -158,7 +161,7 @@ int main(void)
             {
                 /* ----  滤波 ---- */
                 int32_t AdFilterValue = Filter_AdcFilt((AdcDevNumTypedef)i, RawValue);
-
+                
                 /* ----  重量转换 ---- */
                 Weight_Update((AdcDevNumTypedef)i, AdFilterValue);
 
@@ -169,24 +172,24 @@ int main(void)
                 Punch_Tick((AdcDevNumTypedef)i, Weight);
 
                 /* ---- 调试打印 ---- */
-//                printf("{AD%d}%d\r\n", i + 1, RawValue);
-//                printf("{Filt%d}%d\r\n", i + 1, AdFilterValue);
-//                printf("{Wei%d}%f\r\n", i + 1, Weight);
+                if (i == 0 || i == 1 || i == 2 || i == 3 || i == 4 || i == 5)
+                {
+                    printf("{AD%d}%d\r\n", i + 1, RawValue);
+                    // printf("{Filt%d}%d\r\n", i + 1, AdFilterValue);
+                    printf("{Wei%d}%.02f\r\n", i + 1, Weight);
+                }
             }
         }
 
 
-        // 可以通过调试修改KeyNum来实现按键按下的效果, 进入之后KeyNum必须清零
+        // 按键扫描：读取键值后分发处理（无按键时返回 0）
+        KeyNum = Key_GetNum();
         if (KeyNum == 1)
         {
-            KeyNum = 0;
             Game_Start();
-
         }
-
-        if (KeyNum == 2)
+        else if (KeyNum == 2)
         {
-            KeyNum = 0;
             Cal_Process(AdcDevNum0);   // 进入标定
         }
 
@@ -225,11 +228,9 @@ int main(void)
             SM28_ShowRunTime(SM28DevNum0, Time, 0);
 //            printf("Time:%d\r\n", Time);
             LastTime = Time;
-
-
+            SM28_Update(SM28DevNum0);
         }
-        SM28_Update(SM28DevNum0);
-
+        
     };
 }
 

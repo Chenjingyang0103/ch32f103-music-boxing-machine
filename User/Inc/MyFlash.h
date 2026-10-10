@@ -11,7 +11,7 @@
 #define MYFLASH_BLOCK_SIZE  256
 
 /* 魔数：用于判断 Flash 是否已写过有效数据 */
-#define MYFLASH_MAGIC       0xA5A5A5A1
+#define MYFLASH_MAGIC       0x44345615
 
 /* 数据区长度（字节）：6*6*4 = 144 */
 #define MYFLASH_CAL_SIZE   (ADC_DEV_NUM * ADC_CAL_POINTS * 4)

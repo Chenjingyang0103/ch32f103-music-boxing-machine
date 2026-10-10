@@ -12,12 +12,8 @@
 #include "debug.h"
 #include "ch32f10x.h"
 
-
-
 // /* 静态数组，每个通道一份，外部无法访问 */
 // static FilterInfoTypedef FilterInfo[ADC_DEV_NUM];
-
-
 
 // /**
 // * @brief  滑动窗口最大值滤波，自动剔除孤立毛刺
