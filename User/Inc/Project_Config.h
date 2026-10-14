@@ -32,19 +32,22 @@ typedef enum
 #define RELEASE_COUNT               2       // 释放计数：连续 N 点低于释放阈值判定松手
 
 /* ==================== GameLogic 参数配置 ==================== */
-#define GAME_TARGET_NUM             6       // 游戏使用的靶子数量（逻辑靶）
+#define GAME_TARGET_NUM             1       // 游戏使用的靶子数量（逻辑靶）
 
 #define GAME_TIMEOUT_ENABLE         0       // 是否开启超时切换,超时会切换下一个随机靶子：1=开启，0=关闭
 #define GAME_SWITCH_AFTER_HIT       1       // 击打后是否立即切换下一个靶子：1=立即切换，0=等待超时后再切换
-#define GAME_CONSECUTIVE_TARGET     0       // 是否允许连续两次出现相同靶子：1=允许，0=不允许
+#define GAME_CONSECUTIVE_TARGET     1       // 是否允许连续两次出现相同靶子：1=允许，0=不允许
 
 #define MAX_ROUNDS                  10000   // 总回合数,值不能大于65535
-#define TIMEOUT_TIME                15      // 超时次数,默认计时150Ms,超时时间 = 超时次数 * 150Ms, 数值越小越快,最快150Ms
+#define TIMEOUT_TIME                10      // 超时次数,默认计时150Ms,超时时间 = 超时次数 * 150Ms, 数值越小越快,最快150Ms
 
 /* ==================== Timer 参数配置 ==================== */
-#define GAME_TICK_PERIOD_MS         150     // 游戏逻辑计数周期，单位毫秒（每150ms GameTick加1）
+#define GAME_TICK_PERIOD_MS         100     // 游戏逻辑计数周期，单位毫秒（每150ms GameTick加1）
 
 /* ==================== SM16028E 参数配置 ==================== */
 #define SM28_DEV_NUM            1       // 设备数量
+
+/* ==================== Led 参数配置 ==================== */
+#define LED_DEV_NUM             6       // LED 设备数量（与靶子数一致，对应 AdcDevNum0~5）
 
 #endif

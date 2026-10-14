@@ -171,3 +171,15 @@ int32_t Weight_GetZeroValue(AdcDevNumTypedef DevNum)
 {
     return WeightInfo[DevNum].ZeroAdc;
 }
+
+/**
+ * @brief 获取最近一次滤波后的 ADC 值
+ * @param DevNum 通道号
+ * @retval 最近一次传入 Weight_Update 的滤波 ADC 值（= 零点 + 当前差分）
+ * @note  由 ZeroAdc 与 DiffValue 还原，不额外存储，故不改变结构体布局。
+ */
+int32_t Weight_GetAdcValue(AdcDevNumTypedef DevNum)
+{
+    WeightInfoTypedef *p = &WeightInfo[DevNum];
+    return p->ZeroAdc + p->DiffValue;
+}

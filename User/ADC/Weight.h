@@ -39,5 +39,6 @@ float Weight_GetValue(AdcDevNumTypedef DevNum);         // 获取当前重量（
 int32_t Weight_GetZeroValue(AdcDevNumTypedef DevNum);   // 获取当前零点值（ADC 码值）
 void Weight_SetZero(AdcDevNumTypedef DevNum, int32_t ZeroValue);   // 手动置零：将当前 ADC 值设为零点，重量归零
 int32_t Weight_GetAdcDiff(AdcDevNumTypedef DevNum);      // 获取当前AD差分值（调试用）
+int32_t Weight_GetAdcValue(AdcDevNumTypedef DevNum);      // 获取最近一次滤波后的 ADC 值（= 零点 + 当前差分）
 
 #endif

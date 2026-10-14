@@ -10,6 +10,7 @@
       <TargetName>CH32F10x</TargetName>
       <ToolsetNumber>0x4</ToolsetNumber>
       <ToolsetName>ARM-ADS</ToolsetName>
+      <pArmCC>5060750::V5.06 update 6 (build 750)::ARMCC</pArmCC>
       <pCCUsed>5060750::V5.06 update 6 (build 750)::ARMCC</pCCUsed>
       <uAC6>0</uAC6>
       <TargetOption>
@@ -564,6 +565,16 @@
               <FileType>5</FileType>
               <FilePath>.\User\ADC\Calibration.h</FilePath>
             </File>
+            <File>
+              <FileName>FilterTest.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\User\ADC\FilterTest.c</FilePath>
+            </File>
+            <File>
+              <FileName>FilterTest.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\User\ADC\FilterTest.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -578,6 +589,16 @@
               <FileName>SM16028E.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\User\Display\SM16028E.h</FilePath>
+            </File>
+            <File>
+              <FileName>Led.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\User\Display\Led.c</FilePath>
+            </File>
+            <File>
+              <FileName>Led.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\User\Display\Led.h</FilePath>
             </File>
           </Files>
         </Group>

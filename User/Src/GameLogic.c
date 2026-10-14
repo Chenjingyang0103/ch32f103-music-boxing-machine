@@ -11,6 +11,8 @@
 #include "PunchDetect.h"
 #include "Timer.h"
 #include "SM16028E.h"       // 数码管显示
+#include "Led.h"            // 靶子指示 LED
+#include "Weight.h"         // 每轮重记零点
 #include "debug.h"
 // #include "Display.h"
 // #include "LEDMusic.h"
@@ -117,6 +119,10 @@ void Game_Task(void)
             // 播放准备音乐，选靶子，然后进入 PLAYING
             // （这里可以加 500ms 延时做过渡）
             pRun->TargetNum = Game_RandomTarget();          // 生成随机靶子号
+            Led_On((LedDevNumTypedef)pRun->TargetNum);      // 点亮当前选中靶子对应的 LED
+            /* 每轮选靶后，用该通道最新滤波 ADC 值重记零点，消除通道零点漂移 */
+            Weight_SetZero((AdcDevNumTypedef)pRun->TargetNum,
+                           Weight_GetAdcValue((AdcDevNumTypedef)pRun->TargetNum));
             printf("{当前靶号}%d\r\n", (pRun->TargetNum + 1));
             printf("{当前靶号:%d, 击中次数%d, 总回合数:}%d\r\n", (pRun->TargetNum + 1), pRun->HitCount, pRun->TotalRounds);
             // printf("当前状态Ready Num:%d\n", pRun->TargetNum);
@@ -141,6 +147,7 @@ void Game_Task(void)
                 printf("击中靶子%d,力度:%f\r\n", (pRun->TargetNum + 1), PeakForce);
                 pRun->HitCount++;       // 击中次数+1
                 pRun->TotalRounds++;    // 总局数+1
+                Led_Off((LedDevNumTypedef)pRun->TargetNum);  // 击中后熄灭对应 LED
                 // LEDMusic_PlayHit(force);
                 // Display_ShowForce(force);
                 #if GAME_SWITCH_AFTER_HIT
@@ -160,6 +167,7 @@ void Game_Task(void)
                 {
                     // printf("Time:%d\n", GetGameTick());
                     pRun->TotalRounds++;
+                    Led_Off((LedDevNumTypedef)pRun->TargetNum);  // 超时后熄灭对应 LED
                     // printf("击打超时!!!!!!!!!!!!!\n");
                     // LEDMusic_PlayMiss();
                     // Display_ShowForce(0);
@@ -214,6 +222,7 @@ void Game_Task(void)
             // Display_ShowFinal(pRun->HitCount, pRun->TotalRounds);
             // LEDMusic_PlayGameOver();
             printf("击中次数:%d,总次数:%d\r\n", pRun->HitCount, pRun->TotalRounds);
+            Led_AllOff();   // 游戏结束，熄灭全部靶子指示
             pRun->GameState = GameState_Idle;   // 回到空闲模式,等待按键触发Game_Start()开始游戏
             printf("总运行时间:%d毫秒\r\n", GetTempTickMs());
             break;
