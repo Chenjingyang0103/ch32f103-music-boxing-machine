@@ -17,68 +17,6 @@
 
 uint8_t KeyNum = 0;         // 键值（按键功能已恢复：PB12 低电平有效）
 
-#if 0   /* 旧的阻塞式循环标定，已停用（不放砝码也会被全部标完），保留备查 */
-/**
- * @brief  执行一次完整标定流程（阻塞）
- * @param  DevNum  通道号
- * @note   按顺序标定：零点 → 200g → 500g → 1000g → 2000g → 4000g
- *         全部完成后调用 Cal_Save 写入 Flash。
- *         单点标定由 Cal_SetRate 独立完成，不在此函数内。
- */
-static void Cal_Process(AdcDevNumTypedef DevNum)
-{
-    printf("开始标定通道 %d\r\n", DevNum);
-
-    /* ---- 1. 标定零点 ---- */
-    printf("请清空秤台，等待稳定...\r\n");
-    if (!Cal_SetZero(DevNum))
-    {
-        printf("零点标定失败（超时）\r\n");
-        return;
-    }
-    printf("零点标定完成：%d\r\n", Cal_GetAdc(DevNum, CalPoint_Zero));
-
-    /* ---- 2. 依次标定各砝码点 ---- */
-    struct
-    {
-        CalPointTypedef point;
-        const char     *name;
-    } steps[] = {
-        {CalPoint_200g,  "200g"},
-        {CalPoint_500g,  "500g"},
-        {CalPoint_1000g, "1000g"},
-        {CalPoint_2000g, "2000g"},
-        {CalPoint_4000g, "4000g"},
-    };
-
-    for (uint8_t i = 0; i < sizeof(steps) / sizeof(steps[0]); i++)
-    {
-        printf("请放置 %s 砝码，等待稳定...\r\n", steps[i].name);
-        if (!Cal_SetPoint(DevNum, steps[i].point))
-        {
-            printf("%s 标定失败（超时）\r\n", steps[i].name);
-            return;
-        }
-        printf("%s 标定完成：%d\r\n", steps[i].name,
-               Cal_GetAdc(DevNum, steps[i].point));
-    }
-
-    /* ---- 3. 保存到 Flash ---- */
-    if (Cal_Save())
-    {
-        printf("标定数据已保存到 Flash\r\n");
-    }
-    else
-    {
-        printf("标定数据保存失败\r\n");
-    }
-
-    /* ---- 4. 用新标定值重新初始化 Weight ---- */
-    Weight_Init(DevNum, Cal_GetAdc(DevNum, CalPoint_Zero));
-    printf("标定流程结束\r\n");
-}
-#endif  /* 旧的阻塞式循环标定 */
-
 
 /* ==================== 按键步进标定 ==================== */
 
@@ -160,6 +98,10 @@ static void Cal_ProcessStep(AdcDevNumTypedef DevNum)
  */
 int main(void)
 {
+
+
+    ///
+    
     SystemCoreClockUpdate();        // 更新系统时钟变量（SystemCoreClock），确保后续延时和配置准确
 
     Delay_Init();                   // 初始化延时函数（基于SysTick）
@@ -168,20 +110,6 @@ int main(void)
     Timer2_Init(1000, 8);            // ARR = 999, PSC = 7 定时器初始化, 定时1Ms中断一次
 
     Key_Init();                     // 按键初始化（PB12，低电平有效）
-
-
-
-//    if (!MyFlash_Init((uint32_t *)AdCalArray, Rate))
-//    {
-//        printf("MyFlash: 标定表初始化失败\r\n");
-//        /* 报警 / 看门狗复位 */
-//    }
-//    MyFlash_GetRate(Rate);
-//    for(uint8_t i = 0; i < ADC_DEV_NUM; i ++)
-//    {
-//        printf("Rate[%d]:%f  ", i, Rate[i]);
-//    }
-//    printf("\r\n");
 
     HCT6521_Init();                 //SPI引脚初始化,HTC6521寄存器配置初始化
     Cal_Init();                     // 标定模块初始化：加载 Flash 或使用默认值
@@ -209,7 +137,7 @@ int main(void)
                 break;
             }
         }
-        FilterValue = Filter_AdcFilt((AdcDevNumTypedef)i, AdRawValue);
+        FilterValue = Filter_AdcFilt((AdcDevNumTypedef)i, AdRawValue, FilterMode_Dynamic);   // 开机零点采集：固定动态模式透传
 
         printf("FilterValue= %d  i= %d\r\n", FilterValue, i);
         Weight_Init((AdcDevNumTypedef)i, FilterValue);
@@ -229,10 +157,11 @@ int main(void)
     Led_InitAll();                  // 初始化 6 路靶子指示 LED（默认全灭）
 
     Game_Init();
-    // Game_Start();
+    Game_Start();
 
     printf("初始化完成！！！\r\n");
 
+    uint8_t CalDevNum = 0;              // 按键标定目标通道号：0 = AdcDevNum0；按键数量不足，暂不做运行时通道切换，需标定其它通道时直接改此初值
     while (1)
     {
         int32_t RawValue;
@@ -241,7 +170,7 @@ int main(void)
             if (HCT6521_Task((AdcDevNumTypedef)i, &RawValue))
             {
                 /* ----  滤波 ---- */
-                int32_t AdFilterValue = Filter_AdcFilt((AdcDevNumTypedef)i, RawValue);
+                int32_t AdFilterValue = Filter_AdcFilt((AdcDevNumTypedef)i, RawValue, Punch_GetFilterMode((AdcDevNumTypedef)i));
                 
                 /* ----  重量转换 ---- */
                 Weight_Update((AdcDevNumTypedef)i, AdFilterValue);
@@ -255,12 +184,12 @@ int main(void)
                 /* ---- 调试打印 ---- */
                 if (i == 0 || i == 1 || i == 2 || i == 3 || i == 4 || i == 5)
                 {
-                    // printf("{AD%d}%d\r\n", i + 1, RawValue);
+                    printf("{AD%d}%d\r\n", i + 1, RawValue);
                     // printf("{Filt%d}%d\r\n", i + 1, AdFilterValue);
-                    // printf("{Wei%d}%.02f\r\n", i + 1, Weight);
+                    printf("{Wei%d}%.02f\r\n", i + 1, Weight);
                 }
 
-                #if 1    /* FilterTest 测试模块：观察窗口滤波后的重量是否稳定（关闭改 0） */
+                #if 0    /* FilterTest 测试模块：观察窗口滤波后的重量是否稳定（关闭改 0） */
                 {
                     /* 如需只观察某一路，把条件改为 (i == 0) 即可 */
                     if (i == 0/*  || i == 1 || i == 2 || i == 3 || i == 4 || i == 5 */)
@@ -277,43 +206,19 @@ int main(void)
         }
 
 
-        #if 1    /* 按键功能已恢复（PB12，低电平有效）；以下为原按键扫描代码 */
+        #if 1    /* 按键功能（PB12，低电平有效）；以下为原按键扫描代码 */
         // 按键扫描：读取键值后分发处理（无按键时返回 0）
         KeyNum = Key_GetNum();
+        
         if (KeyNum == 2)
         {
-            Game_Start();
+            // Game_Start();
         }
         else if (KeyNum == 1)
         {
-            Cal_ProcessStep(AdcDevNum0);   // 按键步进标定：每次按键标定一个点
-            // Cal_Process(AdcDevNum0);   // 旧的阻塞式循环标定（已停用，见文件上方 #if 0）
+            Cal_ProcessStep((AdcDevNumTypedef)CalDevNum);   // 按键步进标定：每次按键标定一个点（目标通道由 CalDevNum 指定）
         }
 
-        if (KeyNum == 3)
-        {
-//            KeyNum = 0;
-
-//            int32_t AdCalVal;
-//            if(HCT6521_Task((AdcDevNumTypedef)0, &AdCalVal))
-//            {
-//                Rate[0] = Weight_Calibrate((AdcDevNumTypedef)0, Weight_500g, AdCalVal, AdCalArray);
-//                printf("Rate:%f\r\n", Rate[0]);
-//                if(Rate[0] == -1.0f)
-//                {
-//                    printf("校准错误!!!\r\n");
-//                }
-//                else
-//                {
-//                    MyFlash_SetRate(Rate);
-//                }
-//                if(!MyFlash_Save())
-//                {
-//                    printf("Rate数据写入失败!!!\r\n");
-//                }
-
-//            }
-        }
         #endif
 
         Game_Task();    // 游戏状态机轮询

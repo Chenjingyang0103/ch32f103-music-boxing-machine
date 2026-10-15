@@ -11,110 +11,108 @@
 #include "Project_Config.h"
 #include "debug.h"
 #include "ch32f10x.h"
+#include <string.h>
 
-// /* 静态数组，每个通道一份，外部无法访问 */
-// static FilterInfoTypedef FilterInfo[ADC_DEV_NUM];
+/* 静态数组，每个通道一份，外部无法访问 */
+static FilterInfoTypedef FilterInfo[ADC_DEV_NUM];
 
-// /**
-// * @brief  滑动窗口最大值滤波，自动剔除孤立毛刺
-// * @param  DevNum    通道号
-// * @param  NewValue  最新ADC原始值
-// * @retval 滤波后的窗口最大值（已排除单点突跳）
-// */
-// static int32_t Filter_WindowMax(AdcDevNumTypedef DevNum, int32_t NewValue)
-// {
-//     int32_t limit = Filter_Get100kgValue(DevNum);
-//     // 如果 NewValue 大于 limit(差不多100kg),则大概率是噪声, 直接滤除
-//     if(NewValue >= limit)
-//     {
-//         NewValue = 0;
-//     }
-//     u8 i;
-//     u8 WinSize = WINDOW_SIZE;                     // 窗口大小（采样点数）
-//     FilterInfoTypedef *p = &FilterInfo[DevNum];       // 当前通道状态指针
+/* ==================== 滤波深度参数表 ==================== */
+/* s_filterDeep[深度][0] = 窗口总样本数
+ * s_filterDeep[深度][1] = 累加起始索引（跳过排序后低端的样本个数）
+ * s_filterDeep[深度][2] = 累加样本个数
+ * s_filterDeep[深度][3] = 均值右移位数（等价除以 2^MoveNum）
+ *
+ * 累加区间：[起始索引, 起始索引 + 累加个数 - 1]
+ * 累加个数均为 2 的幂，可用右移代替除法。
+ */
+static const uint8_t s_filterDeep[][4] =
+{
+    {8,   2,   1,   0},     // 窗口8，  从索引2开始，累加1个，不右移
+    {15,  7,   2,   1},     // 窗口15，从索引7开始，累加2个，右移1位
+    {20,  9,   2,   1},     // 窗口20，从索引9开始，累加2个，右移1位
+    {20,  8,   4,   2},     // 窗口20，从索引8开始，累加4个，右移2位
+};
 
-//     /* 越界保护:窗口大小为 0 时直接返回错误码 */
-//     if (WinSize == 0) {
-//         return 0xFF;   // 返回错误值
-//     }
 
-//     /* -------- 1. 滑动窗口更新 -------- */
-//     // 整体左移，丢弃最旧数据（FilterArray[0]），将新值放入队尾
-//     for (i = 0; i < WinSize - 1; i++)
-//     {
-//         p->FilterArray[i] = p->FilterArray[i + 1];
-//     }
-//     p->FilterArray[WinSize - 1] = NewValue;
+/**
+ * @brief  静态窗口滤波（去低端极值平均）——算法与 Calibration 的 Cal_WindowAver 一致
+ * @param  DevNum    通道号
+ * @param  NewValue  本次 ADC 采样原始值
+ * @retval 滤波后的均值（已右移实现除法）
+ * @note   动态 / 静态模式都需每拍调用，保证切静态时窗口内已是最新历史。
+ */
+static int32_t Filter_WindowAver(AdcDevNumTypedef DevNum, int32_t NewValue)
+{
+    uint8_t i, j;
+    uint8_t iSet, jSet, kSet, MoveNum;
+    int32_t tmp;
+    uint8_t deep = FILTER_STATIC_DEEP;
 
-//     /* -------- 2. 求窗口内最大值和次大值 -------- */
-//     // 初始化最大和次大为第一个元素，遍历比较更新
-//     int32_t MaxVal, SecondVal;
+    FilterInfoTypedef *p = &FilterInfo[DevNum];
 
-//     /* 处理数组只有一个元素的情况 */
-//     if (WinSize == 1) {
-//         MaxVal = p->FilterArray[0];
-//         SecondVal = p->FilterArray[0]; // 只有一个元素时，次大值只能等于最大值
-//     }
-//     else
-//     {
-//         /* 用前两个元素初始化最大值和次大值 */
-//         if (p->FilterArray[0] >= p->FilterArray[1])
-//         {
-//             MaxVal = p->FilterArray[0];
-//             SecondVal = p->FilterArray[1];
-//         }
-//         else
-//         {
-//             MaxVal = p->FilterArray[1];
-//             SecondVal = p->FilterArray[0];
-//         }
+    /* ---- 1. 从深度配置表读取参数 ---- */
+    iSet    = s_filterDeep[deep][0] - 1;                          // 排序外循环次数 = 窗口大小 - 1
+    jSet    = s_filterDeep[deep][0];                              // 窗口大小
+    kSet    = s_filterDeep[deep][2] + s_filterDeep[deep][1];      // 累加结束索引（起始 + 个数）
+    MoveNum = s_filterDeep[deep][3];                              // 右移位数
 
-//         /* 从第三个元素开始遍历，更新最大值和次大值 */
-//         for (i = 2; i < WinSize; i++)
-//         {
-//             if (p->FilterArray[i] > MaxVal)
-//             {
-//                 /* 当前元素比已知最大值还大，原最大值降为次大 */
-//                 SecondVal = MaxVal;
-//                 MaxVal = p->FilterArray[i];
-//             }
-//             else if (p->FilterArray[i] > SecondVal)
-//             {
-//                 /* 当前元素不大于最大值，但比当前次大值大，更新次大值 */
-//                 SecondVal = p->FilterArray[i];
-//             }
-//         }
-//     }
+    /* ---- 2. 插入新值：小于上次均值放尾部，否则放头部 ---- */
+    if (NewValue < p->WinAvg)
+    {
+        p->FilterArray[s_filterDeep[deep][0] - 1] = NewValue;
+    }
+    else
+    {
+        p->FilterArray[0] = NewValue;
+    }
 
-//     /* -------- 3. 孤立毛刺判别 -------- */
-//     // 正常冲击：窗口内至少有两个超过阈值高值
-//     // 孤立毛刺：仅单点异常高，最大与次大差距悬殊
-//     // 此函数只是为了区分毛刺和正常数据,正常的冲击被设置成了连续三个值一样的值,而毛刺只有一个值
-//     // 可以通过带有波形显示的串口调试助手看数据,实现滤除毛刺数据是直接在PunchDetect.c中处理的
-//     // if (SecondVal > 0 && ((float)(MaxVal - SecondVal) * 100.0f / (float)(MaxVal)) > SPIKE_RATIO)
-//     if (SecondVal > 0 && (MaxVal - SecondVal) > SPIKE_ABS_THRESHOLD)
-//     {
-//     // printf("{有毛刺}%d\n",SecondVal);
-//        return SecondVal;    // 丢弃毛刺，返回次大值（即正常数据的最大值）
-//     }
-//    // 正常情况：直接返回峰值
-//     return MaxVal;
-// }
+    /* ---- 3. 冒泡排序：窗口数组从小到大排序 ---- */
+    for (i = 0; i < iSet; i++)
+    {
+        for (j = i + 1; j < jSet; j++)
+        {
+            if (p->FilterArray[i] > p->FilterArray[j])
+            {
+                tmp = p->FilterArray[i];
+                p->FilterArray[i] = p->FilterArray[j];
+                p->FilterArray[j] = tmp;
+            }
+        }
+    }
+
+    /* ---- 4. 跳过低端极值，取中间区间累加 ---- */
+    p->WinAvg = 0;
+    for (i = s_filterDeep[deep][1]; i < kSet; i++)
+    {
+        p->WinAvg += p->FilterArray[i];
+    }
+    /* 累加和右移实现除法，得到窗口均值（避免浮点运算） */
+    p->WinAvg >>= MoveNum;
+
+    return p->WinAvg;
+}
 
 
 /* ---------- 对外接口实现 ---------- */
 
 /**
- * @brief  ADC 滤波：当前为空实现，原样返回 RawValue（滤波算法待实现）
- * @param  DevNum    通道号
- * @param  RawValue  原始 ADC 值
- * @retval 原样返回 RawValue
+ * @brief  ADC 滤波：按 FilterMode 切换动态透传 / 静态窗口滤波
+ * @param  DevNum      通道号
+ * @param  RawValue    原始 ADC 值
+ * @param  FilterMode  FilterMode_Dynamic=动态透传（保峰值），FilterMode_Static=静态窗口滤波
+ * @retval 动态模式返回 RawValue，静态模式返回窗口滤波值
+ * @note   无论何种模式都先喂入窗口滤波，保证切静态时窗口内已是最新历史。
  */
-int32_t Filter_AdcFilt(AdcDevNumTypedef DevNum, int32_t RawValue)
+int32_t Filter_AdcFilt(AdcDevNumTypedef DevNum, int32_t RawValue, FilterModeTypedef FilterMode)
 {
+    int32_t staticVal = Filter_WindowAver(DevNum, RawValue);
+
+    if (FilterMode == FilterMode_Static)
+    {
+        return staticVal;
+    }
     return RawValue;
 }
-
 
 /**
 * @brief 初始化指定通道的滤波状态（保留接口/空实现）
@@ -123,6 +121,6 @@ int32_t Filter_AdcFilt(AdcDevNumTypedef DevNum, int32_t RawValue)
 */
 void Filter_Init(AdcDevNumTypedef DevNum)
 {
-    (void)DevNum;   // 当前为空实现，参数暂未使用
+    memset(&FilterInfo[DevNum], 0, sizeof(FilterInfoTypedef));
     // memset(&FilterInfo[DevNum], 0, sizeof(FilterInfoTypedef));
 }

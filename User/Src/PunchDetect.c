@@ -50,11 +50,16 @@ void Punch_Init(AdcDevNumTypedef DevNum)
     pRun->Active      = 0;
     pRun->HitReported = 0;       // 本次击中事件是否已被外部读取上报（用于边沿触发）
     pRun->ReleaseCnt  = 0;
+    pRun->StaticCnt   = 0;       // 连续超触发阈值计数清零
+    pRun->FilterMode     = FilterMode_Dynamic;   // 滤波模式清零（动态）
+    pRun->LastFilterMode = FilterMode_Dynamic;   // 松手锁存的滤波模式清零（动态）
+    pRun->StaticWeight   = 0;    // 静态载稳定读数锁存清零
 
     /* ---- 静态阈值（可根据实际调试调整） ---- */
     pSta->TriggerThreshold  = TRIGGER_THRESHOLD;    // 击中阈值,重量大于阈值时认为有效击中（单位 g）
     pSta->ReleaseThreshold  = RELEASE_THRESHOLD;    // 松手复位门槛,力度回落到此值以下时，认为一次击打结束（单位 g）
     pSta->ReleaseCntLimit      = RELEASE_COUNT;     // 连续 N 点低于释放阈值判定松手
+    pSta->StaticCntLimit       = STATIC_CNT_LIMIT;  // 连续 N 点超过触发阈值判定为静态加载
 }
 
 /**
@@ -70,6 +75,10 @@ void Punch_Reset(AdcDevNumTypedef DevNum)
     pRun->Active      = 0;
     pRun->HitReported = 0;
     pRun->ReleaseCnt  = 0;
+    pRun->StaticCnt   = 0;
+    pRun->FilterMode     = FilterMode_Dynamic;
+    pRun->LastFilterMode = FilterMode_Dynamic;   // 松手锁存的滤波模式清零
+    pRun->StaticWeight   = 0;    // 静态载稳定读数锁存清零
 }
 
 /**
@@ -82,6 +91,33 @@ void Punch_Tick(AdcDevNumTypedef DevNum, float force)
 {
     PunchRunningParamTypedef *pRun = &PunchDeviceParam[DevNum].RunningParam;
     PunchStaticParamTypedef  *pSta = &PunchDeviceParam[DevNum].StaticParam;
+
+    /* ---- 迟滞计数：连续超过触发阈值判定为静态加载 ---- */
+    if (force > pSta->TriggerThreshold)
+    {
+        if (pRun->StaticCnt < 0xFF)
+        {
+            pRun->StaticCnt++;   // 上限保护，避免 uint8 溢出
+        }
+        if (pRun->StaticCnt >= pSta->StaticCntLimit)
+        {
+            if (pRun->FilterMode == FilterMode_Dynamic)
+            {
+                pRun->StaticWeight = force;   // 判定为静态加载的那一刻锁存稳定读数（g），之后不再更新，避免被移除时的下降值污染
+            }
+            pRun->FilterMode = FilterMode_Static;   // 判定为静态
+        }
+    }
+    else if (force < pSta->ReleaseThreshold)
+    {
+        if (pRun->FilterMode == FilterMode_Static)
+        {
+            pRun->LastFilterMode = FilterMode_Static;   // 松手瞬间、清除 FilterMode 之前锁存：本次冲拳为静态载
+        }
+        pRun->StaticCnt  = 0;
+        pRun->FilterMode = FilterMode_Dynamic;
+    }
+    /* 介于两阈值之间：迟滞，两者都保持不变 */
 
     switch (pRun->state)
     {
@@ -202,4 +238,39 @@ void Punch_ClearPeakForce(AdcDevNumTypedef DevNum)
 float Punch_GetPeakForce(AdcDevNumTypedef DevNum)
 {
     return PunchDeviceParam[DevNum].RunningParam.PeakForce;
+}
+
+/**
+ * @brief 获取该通道当前滤波模式
+ * @param DevNum 通道号
+ * @retval FilterMode_Dynamic=动态，FilterMode_Static=静态；参数越界返回 FilterMode_Dynamic
+ */
+FilterModeTypedef Punch_GetFilterMode(AdcDevNumTypedef DevNum)
+{
+    if (DevNum >= ADC_DEV_NUM) return FilterMode_Dynamic;
+    return PunchDeviceParam[DevNum].RunningParam.FilterMode;
+}
+
+/**
+ * @brief 获取上次松手时锁存的滤波模式
+ * @param DevNum 通道号
+ * @retval FilterMode_Static=本次冲拳发生在静态载上，FilterMode_Dynamic=动态冲拳；参数越界返回 FilterMode_Dynamic
+ * @note   松手瞬间 FilterMode 会被清成 Dynamic，故在清除前锁存到 LastFilterMode，
+ *         供 GameLogic 在回合结束后判断显示稳定值还是峰值。
+ */
+FilterModeTypedef Punch_GetLastFilterMode(AdcDevNumTypedef DevNum)
+{
+    if (DevNum >= ADC_DEV_NUM) return FilterMode_Dynamic;
+    return PunchDeviceParam[DevNum].RunningParam.LastFilterMode;
+}
+
+/**
+ * @brief 获取锁存的静态载稳定读数
+ * @param DevNum 通道号
+ * @retval 静态载上的稳定读数（单位：g）；参数越界返回 0
+ */
+float Punch_GetStaticWeight(AdcDevNumTypedef DevNum)
+{
+    if (DevNum >= ADC_DEV_NUM) return 0;
+    return PunchDeviceParam[DevNum].RunningParam.StaticWeight;
 }

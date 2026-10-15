@@ -143,8 +143,15 @@ void Game_Task(void)
             {
                 float PeakForce = Punch_GetPeakForce((AdcDevNumTypedef)pRun->TargetNum);  // 获取当前轮次力度峰值
                 // Punch_ClearPeakForce(pRun->TargetNum);
+                /* 本次为静态载（松手前锁存）打印锁存的稳定读数；动态冲拳打印本回合峰值力度 */
+                float PrintForce = PeakForce;
+                if (Punch_GetLastFilterMode((AdcDevNumTypedef)pRun->TargetNum) == FilterMode_Static)
+                {
+                    PrintForce = Punch_GetStaticWeight((AdcDevNumTypedef)pRun->TargetNum);
+                }
                 printf("{击中靶子}%d\r\n", (pRun->TargetNum + 1));
-                printf("击中靶子%d,力度:%f\r\n", (pRun->TargetNum + 1), PeakForce);
+                printf("击中靶子%d,力度:%f\r\n", (pRun->TargetNum + 1), PrintForce);
+                // printf("击中靶子%d,力度:%f\r\n", (pRun->TargetNum + 1), PeakForce);   // 旧的打印峰值力度（保留备查）
                 pRun->HitCount++;       // 击中次数+1
                 pRun->TotalRounds++;    // 总局数+1
                 Led_Off((LedDevNumTypedef)pRun->TargetNum);  // 击中后熄灭对应 LED
@@ -191,7 +198,14 @@ void Game_Task(void)
         case GameState_Display:
         {
             float PeakForce = Punch_GetPeakForce((AdcDevNumTypedef)pRun->TargetNum);  // 获取当前轮次力度峰值
-            SM28_ShowMaxForce(SM28DevNum0, PeakForce, 0);   // 显示本次力度（消隐前导零）
+            /* 本次为静态载（松手前锁存）显示锁存的稳定读数；动态冲拳显示本回合峰值力度 */
+            float ShowValue = PeakForce;
+            if (Punch_GetLastFilterMode((AdcDevNumTypedef)pRun->TargetNum) == FilterMode_Static)
+            {
+                ShowValue = Punch_GetStaticWeight((AdcDevNumTypedef)pRun->TargetNum);
+            }
+            SM28_ShowMaxForce(SM28DevNum0, ShowValue, 0);   // 显示模式相关值（消隐前导零）
+            // SM28_ShowMaxForce(SM28DevNum0, PeakForce, 0);   // 旧的显示本次力度峰值（消隐前导零，保留备查）
             pRun->GameState = GameState_Result;
             break;
 
