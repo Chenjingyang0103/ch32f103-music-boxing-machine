@@ -11,83 +11,13 @@
 #include "GameLogic.h"      // 游戏逻辑
 #include "Project_Config.h" // 整个工程的配置文件
 #include "Calibration.h"
+#include "KeyCal.h"         // 按键步进标定业务
 #include "FilterTest.h"     // 滤波稳定性测试（测试用，不影响检测通道）
 
 #include "debug.h"          // printf调试和delay延时
 
 uint8_t KeyNum = 0;         // 键值（按键功能已恢复：PB12 低电平有效）
 
-
-/* ==================== 按键步进标定 ==================== */
-
-/* 0 = 未在标定流程；1~6 = 已进入流程，下一次按键标定第 s_CalStep 个点（0 起算） */
-static uint8_t s_CalStep = 0;
-
-/* 标定点顺序：第 1 次按键→零点，第 2 次→200g，依次到第 6 次→4000g */
-static const CalPointTypedef s_CalOrder[] = {
-    CalPoint_Zero, CalPoint_200g, CalPoint_500g, CalPoint_1000g, CalPoint_2000g, CalPoint_4000g,
-};
-
-/* 各标定点对应的提示名称，与 s_CalOrder 一一对应 */
-static const char *s_CalName[] = {
-    "零点", "200g", "500g", "1000g", "2000g", "4000g",
-};
-
-/**
- * @brief  按键步进标定：每按一次键只标定一个点
- * @param  DevNum  通道号
- * @retval None
- * @note   顺序：第 1 次按键→零点，第 2 次→200g，第 3 次→500g，
- *         第 4 次→1000g，第 5 次→2000g，第 6 次→4000g。
- *         每次标定内部阻塞等待 ADC 稳定（Cal_SetPoint 内部调用 Cal_WaitStable），
- *         需先把砝码放好再按键。
- *         第 6 次完成后自动 Cal_Save 保存 Flash、Weight_Init 重新初始化，并退出标定流程。
- *         某次标定失败（超时）时停在该点，可再次按键重试。
- */
-static void Cal_ProcessStep(AdcDevNumTypedef DevNum)
-{
-    const uint8_t   cnt   = (uint8_t)(sizeof(s_CalOrder) / sizeof(s_CalOrder[0]));
-    uint8_t         step  = s_CalStep;
-    CalPointTypedef point = s_CalOrder[step];
-
-    if (step == 0)
-    {
-        printf("进入按键标定流程：正在标定零点，请清空秤台并保持稳定...\r\n");
-    }
-    else
-    {
-        printf("按键标定：正在标定 %s，请保持稳定...\r\n", s_CalName[step]);
-    }
-
-    if (!Cal_SetPoint(DevNum, point))
-    {
-        printf("%s 标定失败（超时），可再次按键重试\r\n", s_CalName[step]);
-        return;                         /* 失败停在该点，s_CalStep 保持不变 */
-    }
-    printf("{%s 标定完成：}%d\r\n", s_CalName[step], Cal_GetAdc(DevNum, point));
-
-    s_CalStep = step + 1;
-
-    if (s_CalStep >= cnt)
-    {
-        /* ---- 全部标定点完成：保存到 Flash 并用新标定值重新初始化 Weight ---- */
-        if (Cal_Save())
-        {
-            printf("标定数据已保存到 Flash\r\n");
-        }
-        else
-        {
-            printf("标定数据保存失败\r\n");
-        }
-        Weight_Init(DevNum, Cal_GetAdc(DevNum, CalPoint_Zero));
-        s_CalStep = 0;
-        printf("标定流程结束\r\n");
-    }
-    else
-    {
-        printf("请放置 %s 砝码，再次按键标定\r\n", s_CalName[s_CalStep]);
-    }
-}
 
 /*********************************************************************
  * @fn      main
@@ -184,7 +114,7 @@ int main(void)
                 /* ---- 调试打印 ---- */
                 if (i == 0 || i == 1 || i == 2 || i == 3 || i == 4 || i == 5)
                 {
-                    printf("{AD%d}%d\r\n", i + 1, RawValue);
+                    // printf("{AD%d}%d\r\n", i + 1, RawValue);
                     // printf("{Filt%d}%d\r\n", i + 1, AdFilterValue);
                     printf("{Wei%d}%.02f\r\n", i + 1, Weight);
                 }
@@ -216,7 +146,7 @@ int main(void)
         }
         else if (KeyNum == 1)
         {
-            Cal_ProcessStep((AdcDevNumTypedef)CalDevNum);   // 按键步进标定：每次按键标定一个点（目标通道由 CalDevNum 指定）
+            KeyCal_Process((AdcDevNumTypedef)CalDevNum);   // 按键步进标定：每次按键标定一个点（目标通道由 CalDevNum 指定）
         }
 
         #endif

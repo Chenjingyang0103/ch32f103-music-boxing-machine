@@ -1,6 +1,8 @@
+/* 本模块属设备层，禁止包含任何 APP 层头文件（APP→Device 调用仅限白名单） */
+
 #include "Timer.h"
 #include "Project_Config.h"
-#include "GameLogic.h"
+// #include "GameLogic.h"     // 分层重构：设备层不得包含应用层头文件，全文未使用 Game_* 符号
 #include "ch32f10x.h"
 
 static volatile uint32_t s_GameTickMs = 0;   // 累计毫秒，用于产生节拍

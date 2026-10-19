@@ -341,7 +341,7 @@
               <MiscControls>--no-multibyte-chars</MiscControls>
               <Define></Define>
               <Undefine></Undefine>
-              <IncludePath>.\core;.\Debug;.\peripheral\inc;.\Startup;.\peripheral\src;.\User\ADC;.\User\Src;.\User\Inc;.\User\Temp;.\User\Display</IncludePath>
+              <IncludePath>.\core;.\Debug;.\peripheral\inc;.\Startup;.\peripheral\src;.\User\App;.\User\Middleware;.\User\Device;.\User\Common;.\User\Src;.\User\Inc</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -523,82 +523,167 @@
           </Files>
         </Group>
         <Group>
-          <GroupName>user/ADC</GroupName>
+          <GroupName>user/App</GroupName>
           <Files>
             <File>
-              <FileName>Filter.c</FileName>
+              <FileName>GameLogic.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\User\ADC\Filter.c</FilePath>
+              <FilePath>.\User\App\GameLogic.c</FilePath>
             </File>
             <File>
-              <FileName>Filter.h</FileName>
+              <FileName>GameLogic.h</FileName>
               <FileType>5</FileType>
-              <FilePath>.\User\ADC\Filter.h</FilePath>
+              <FilePath>.\User\App\GameLogic.h</FilePath>
             </File>
             <File>
-              <FileName>HCT6521.c</FileName>
+              <FileName>KeyCal.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\User\ADC\HCT6521.c</FilePath>
+              <FilePath>.\User\App\KeyCal.c</FilePath>
             </File>
             <File>
-              <FileName>HCT6521.h</FileName>
+              <FileName>KeyCal.h</FileName>
               <FileType>5</FileType>
-              <FilePath>.\User\ADC\HCT6521.h</FilePath>
-            </File>
-            <File>
-              <FileName>Weight.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\User\ADC\Weight.c</FilePath>
-            </File>
-            <File>
-              <FileName>Weight.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\User\ADC\Weight.h</FilePath>
-            </File>
-            <File>
-              <FileName>Calibration.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\User\ADC\Calibration.c</FilePath>
-            </File>
-            <File>
-              <FileName>Calibration.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\User\ADC\Calibration.h</FilePath>
-            </File>
-            <File>
-              <FileName>FilterTest.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\User\ADC\FilterTest.c</FilePath>
-            </File>
-            <File>
-              <FileName>FilterTest.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\User\ADC\FilterTest.h</FilePath>
+              <FilePath>.\User\App\KeyCal.h</FilePath>
             </File>
           </Files>
         </Group>
         <Group>
-          <GroupName>user/Display</GroupName>
+          <GroupName>user/Middleware</GroupName>
           <Files>
+            <File>
+              <FileName>Filter.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\User\Middleware\Filter.c</FilePath>
+            </File>
+            <File>
+              <FileName>Filter.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\User\Middleware\Filter.h</FilePath>
+            </File>
+            <File>
+              <FileName>Weight.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\User\Middleware\Weight.c</FilePath>
+            </File>
+            <File>
+              <FileName>Weight.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\User\Middleware\Weight.h</FilePath>
+            </File>
+            <File>
+              <FileName>Calibration.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\User\Middleware\Calibration.c</FilePath>
+            </File>
+            <File>
+              <FileName>Calibration.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\User\Middleware\Calibration.h</FilePath>
+            </File>
+            <File>
+              <FileName>FilterTest.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\User\Middleware\FilterTest.c</FilePath>
+            </File>
+            <File>
+              <FileName>FilterTest.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\User\Middleware\FilterTest.h</FilePath>
+            </File>
+            <File>
+              <FileName>PunchDetect.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\User\Middleware\PunchDetect.c</FilePath>
+            </File>
+            <File>
+              <FileName>PunchDetect.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\User\Middleware\PunchDetect.h</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>user/Device</GroupName>
+          <Files>
+            <File>
+              <FileName>HCT6521.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\User\Device\HCT6521.c</FilePath>
+            </File>
+            <File>
+              <FileName>HCT6521.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\User\Device\HCT6521.h</FilePath>
+            </File>
             <File>
               <FileName>SM16028E.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\User\Display\SM16028E.c</FilePath>
+              <FilePath>.\User\Device\SM16028E.c</FilePath>
             </File>
             <File>
               <FileName>SM16028E.h</FileName>
               <FileType>5</FileType>
-              <FilePath>.\User\Display\SM16028E.h</FilePath>
+              <FilePath>.\User\Device\SM16028E.h</FilePath>
             </File>
             <File>
               <FileName>Led.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\User\Display\Led.c</FilePath>
+              <FilePath>.\User\Device\Led.c</FilePath>
             </File>
             <File>
               <FileName>Led.h</FileName>
               <FileType>5</FileType>
-              <FilePath>.\User\Display\Led.h</FilePath>
+              <FilePath>.\User\Device\Led.h</FilePath>
+            </File>
+            <File>
+              <FileName>Key.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\User\Device\Key.c</FilePath>
+            </File>
+            <File>
+              <FileName>Key.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\User\Device\Key.h</FilePath>
+            </File>
+            <File>
+              <FileName>MyFlash.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\User\Device\MyFlash.c</FilePath>
+            </File>
+            <File>
+              <FileName>MyFlash.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\User\Device\MyFlash.h</FilePath>
+            </File>
+            <File>
+              <FileName>Timer.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\User\Device\Timer.c</FilePath>
+            </File>
+            <File>
+              <FileName>Timer.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\User\Device\Timer.h</FilePath>
+            </File>
+            <File>
+              <FileName>MyRTC.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\User\Device\MyRTC.c</FilePath>
+            </File>
+            <File>
+              <FileName>MyRTC.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\User\Device\MyRTC.h</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>user/Common</GroupName>
+          <Files>
+            <File>
+              <FileName>Project_Config.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\User\Common\Project_Config.h</FilePath>
             </File>
           </Files>
         </Group>
@@ -620,41 +705,6 @@
               <FileType>5</FileType>
               <FilePath>.\User\Inc\system_ch32f10x.h</FilePath>
             </File>
-            <File>
-              <FileName>GameLogic.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\User\Inc\GameLogic.h</FilePath>
-            </File>
-            <File>
-              <FileName>Key.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\User\Inc\Key.h</FilePath>
-            </File>
-            <File>
-              <FileName>MyRTC.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\User\Inc\MyRTC.h</FilePath>
-            </File>
-            <File>
-              <FileName>Project_Config.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\User\Inc\Project_Config.h</FilePath>
-            </File>
-            <File>
-              <FileName>PunchDetect.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\User\Inc\PunchDetect.h</FilePath>
-            </File>
-            <File>
-              <FileName>Timer.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\User\Inc\Timer.h</FilePath>
-            </File>
-            <File>
-              <FileName>MyFlash.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\User\Inc\MyFlash.h</FilePath>
-            </File>
           </Files>
         </Group>
         <Group>
@@ -674,36 +724,6 @@
               <FileName>system_ch32f10x.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\User\Src\system_ch32f10x.c</FilePath>
-            </File>
-            <File>
-              <FileName>GameLogic.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\User\Src\GameLogic.c</FilePath>
-            </File>
-            <File>
-              <FileName>Key.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\User\Src\Key.c</FilePath>
-            </File>
-            <File>
-              <FileName>MyRTC.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\User\Src\MyRTC.c</FilePath>
-            </File>
-            <File>
-              <FileName>PunchDetect.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\User\Src\PunchDetect.c</FilePath>
-            </File>
-            <File>
-              <FileName>Timer.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\User\Src\Timer.c</FilePath>
-            </File>
-            <File>
-              <FileName>MyFlash.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\User\Src\MyFlash.c</FilePath>
             </File>
           </Files>
         </Group>

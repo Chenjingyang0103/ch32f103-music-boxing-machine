@@ -34,7 +34,7 @@ typedef enum
 #define STATIC_CNT_LIMIT            14       // 连续超过触发阈值的采样点数达到该值即判定为静态加载
 
 /* ==================== GameLogic 参数配置 ==================== */
-#define GAME_TARGET_NUM             4       // 游戏使用的靶子数量（逻辑靶）
+#define GAME_TARGET_NUM             6       // 游戏使用的靶子数量（逻辑靶）
 
 #define GAME_TIMEOUT_ENABLE         0       // 是否开启超时切换,超时会切换下一个随机靶子：1=开启，0=关闭
 #define GAME_SWITCH_AFTER_HIT       1       // 击打后是否立即切换下一个靶子：1=立即切换，0=等待超时后再切换

@@ -9,7 +9,7 @@
 
 #include "Weight.h"
 #include "Filter.h"
-#include "HCT6521.h"
+// #include "HCT6521.h"     // 分层重构：中间件层不得包含器件驱动头，全文未使用 HCT6521_* 符号
 #include "Calibration.h"
 #include "MyFlash.h"
 #include "debug.h"
